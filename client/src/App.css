@@ -1,33 +1,33 @@
 /* client/src/App.css */
 @import url("https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap");
 
+html,
 body {
   margin: 0;
+  padding: 0;
   font-family: "Comic Neue", "Comic Sans MS", sans-serif;
+  overflow-x: hidden; /* Prevent side-scroll */
+  height: 100%;
 }
 
 /* --- MAIN APP CONTAINER --- */
 .App {
-  /* Use min-height so the page can grow and scroll */
+  /* Use dynamic viewport height for mobile keyboards */
   min-height: 100vh;
+  min-height: 100dvh;
 
-  /* Center content vertically & horizontally */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 
-  /* BACKGROUND SETUP */
   background-image: url("./background-image.PNG");
-  background-color: #5600a5; /* Fallback */
-
-  /* FIXED BACKGROUND: Image stays still when scrolling */
+  background-color: #5600a5;
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
 
-  /* Add padding so footer isn't stuck to bottom */
   padding-bottom: 50px;
 }
 
@@ -42,13 +42,13 @@ body {
   }
 }
 
-/* --- LOGIN WRAPPER & TITLE --- */
+/* --- LOGIN & TITLE --- */
 .login-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  margin-top: 50px; /* Space from top */
+  margin-top: 50px;
 }
 
 .game-title-big {
@@ -60,13 +60,11 @@ body {
   cursor: default;
 }
 
-/* --- CREATIVE BOX STYLE (Hand-drawn look) --- */
+/* --- CREATIVE BOX STYLE --- */
 .creative-box {
   background-color: #ffffff;
   border: 4px solid #000;
-  /* Irregular border radius for hand-drawn feel */
   border-radius: 2% 6% 5% 4% / 1% 1% 2% 4%;
-  /* Hard shadow */
   box-shadow: 10px 10px 0px 0px rgba(0, 0, 0, 1);
 }
 
@@ -76,7 +74,7 @@ body {
   text-align: center;
 }
 
-/* --- AVATAR BUILDER & PREVIEW --- */
+/* --- AVATAR BUILDER --- */
 .avatar-builder {
   display: flex;
   align-items: center;
@@ -87,7 +85,6 @@ body {
   border-radius: 10px;
   border: 2px dashed #ccc;
 }
-
 .avatar-preview {
   position: relative;
   overflow: hidden;
@@ -96,10 +93,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #fff;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.1);
-  background-color: #fff; /* Default */
 }
-
 .avatar-layer {
   position: absolute;
   left: 50%;
@@ -107,23 +103,19 @@ body {
   width: 60%;
   pointer-events: none;
 }
-
 .controls {
   display: flex;
   flex-direction: column;
   gap: 5px;
   width: 100%;
 }
-
 .controls .row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 5px;
   font-size: 14px;
   font-weight: bold;
 }
-
 .controls button {
   background: #3498db;
   color: white;
@@ -136,10 +128,6 @@ body {
   font-size: 12px;
 }
 
-.controls button:hover {
-  background: #2980b9;
-}
-
 /* --- INPUTS & BUTTONS --- */
 .login-box input {
   display: block;
@@ -149,9 +137,7 @@ body {
   font-size: 18px;
   border: 3px solid #000;
   border-radius: 5px;
-  font-family: inherit;
 }
-
 .play-btn {
   margin-top: 15px;
   padding: 12px 40px;
@@ -165,13 +151,12 @@ body {
   font-weight: bold;
   box-shadow: 4px 4px 0px #000;
 }
-
 .play-btn:active {
   transform: translate(4px, 4px);
   box-shadow: none;
 }
-
-.exit-btn {
+.exit-btn,
+.exit-btn-small {
   background: #e74c3c;
   color: white;
   border: 2px solid #000;
@@ -179,18 +164,9 @@ body {
   font-weight: bold;
   cursor: pointer;
   border-radius: 5px;
-  margin-left: auto;
 }
-
-.exit-btn-small {
-  background: #e74c3c;
-  color: white;
-  border: 2px solid #000;
-  padding: 2px 10px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 5px;
+.exit-btn {
+  margin-left: auto;
 }
 
 /* --- GAME LAYOUT --- */
@@ -201,13 +177,11 @@ body {
   overflow: hidden;
   margin-top: 20px;
 }
-
 .lobby,
 .game-over {
   padding: 40px;
   text-align: center;
 }
-
 .lobby-header {
   display: flex;
   justify-content: space-between;
@@ -217,7 +191,6 @@ body {
   padding-bottom: 10px;
   margin-bottom: 20px;
 }
-
 .lobby-avatars {
   display: flex;
   justify-content: center;
@@ -225,7 +198,6 @@ body {
   margin: 20px 0;
   flex-wrap: wrap;
 }
-
 .lobby-player {
   display: flex;
   flex-direction: column;
@@ -234,7 +206,7 @@ body {
   font-weight: bold;
 }
 
-/* --- SIDEBAR (PLAYERS) --- */
+/* Sidebar */
 .sidebar {
   width: 200px;
   background: #2c3e50;
@@ -242,7 +214,6 @@ body {
   padding: 10px;
   overflow-y: auto;
 }
-
 .player {
   padding: 10px;
   border-bottom: 1px solid #444;
@@ -250,12 +221,11 @@ body {
   justify-content: space-between;
   align-items: center;
 }
-
 .player.correct {
   background: #27ae60;
 }
 
-/* --- BOARD AREA --- */
+/* Board */
 .board-area {
   flex: 1;
   display: flex;
@@ -263,7 +233,6 @@ body {
   background: #ddd;
   position: relative;
 }
-
 .top-bar {
   height: 50px;
   background: #eee;
@@ -275,7 +244,6 @@ body {
   font-weight: bold;
   border-bottom: 3px solid #000;
 }
-
 .canvas-wrapper {
   flex: 1;
   display: flex;
@@ -284,14 +252,13 @@ body {
   background: #ccc;
   position: relative;
 }
-
 canvas {
   background: white;
   cursor: crosshair;
   border: 3px solid #000;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+  touch-action: none;
 }
-
 .overlay {
   position: absolute;
   top: 0;
@@ -306,7 +273,6 @@ canvas {
   align-items: center;
   z-index: 10;
 }
-
 .word-pick button {
   font-size: 20px;
   margin: 10px;
@@ -318,7 +284,7 @@ canvas {
   border-radius: 5px;
 }
 
-/* --- RIGHT PANEL (TOOLS + CHAT) --- */
+/* Tools & Chat */
 .right-panel {
   width: 300px;
   display: flex;
@@ -326,7 +292,6 @@ canvas {
   border-left: 3px solid #000;
   background: #f0f0f0;
 }
-
 .toolbar-container {
   padding: 15px;
   background: #e0e0e0;
@@ -336,14 +301,12 @@ canvas {
   align-items: center;
   gap: 15px;
 }
-
 .color-palette {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
 }
-
 .color-swatch {
   width: 28px;
   height: 28px;
@@ -351,18 +314,10 @@ canvas {
   border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
-
-.color-swatch:hover {
-  transform: scale(1.1);
-  z-index: 2;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
 .color-swatch.active {
   border: 2px solid #333;
   transform: scale(1.1);
 }
-
 .tools-row {
   display: flex;
   gap: 10px;
@@ -370,7 +325,6 @@ canvas {
   justify-content: center;
   width: 100%;
 }
-
 .tools-row button {
   padding: 8px 12px;
   cursor: pointer;
@@ -380,12 +334,10 @@ canvas {
   flex: 1;
   font-weight: bold;
 }
-
 .active-tool {
   background: #bbb !important;
   border: 2px solid #000 !important;
 }
-
 .brush-sizes {
   display: flex;
   gap: 8px;
@@ -395,13 +347,11 @@ canvas {
   padding: 5px 0;
   border-top: 2px solid #999;
 }
-
 .size-dot {
   background: black;
   border-radius: 50%;
   cursor: pointer;
 }
-
 .size-dot.s {
   width: 8px;
   height: 8px;
@@ -418,6 +368,7 @@ canvas {
   border: 3px solid #ed1c24;
 }
 
+/* Chat Area & NEW INPUT STYLES */
 .chat {
   flex: 1;
   display: flex;
@@ -425,7 +376,6 @@ canvas {
   overflow: hidden;
   background: white;
 }
-
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -433,12 +383,29 @@ canvas {
   background: #fff;
 }
 
-.chat input {
+.chat-input-area {
+  display: flex;
+  border-top: 3px solid #000;
+  padding: 0;
+}
+.chat-input-area input {
+  flex: 1;
   padding: 15px;
   border: none;
-  border-top: 3px solid #000;
   font-size: 16px;
   background: white;
+}
+.send-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  border-left: 2px solid #000;
+  font-size: 20px;
+  padding: 0 20px;
+  cursor: pointer;
+}
+.send-btn:active {
+  background: #2980b9;
 }
 
 .sys-msg {
@@ -450,7 +417,7 @@ canvas {
   margin: 2px 0;
 }
 
-/* --- FOOTER SECTION --- */
+/* Footer */
 .footer-container {
   display: flex;
   justify-content: center;
@@ -460,7 +427,6 @@ canvas {
   flex-wrap: wrap;
   max-width: 900px;
 }
-
 .info-box {
   padding: 20px;
   width: 300px;
@@ -469,71 +435,52 @@ canvas {
   transition: transform 0.2s ease;
   color: #333;
 }
-
 .info-box h3 {
   margin-top: 0;
   border-bottom: 2px dashed #000;
   padding-bottom: 10px;
   font-size: 22px;
 }
-
 .info-box ul {
   padding-left: 20px;
   margin: 10px 0;
 }
-
-.info-box li {
-  margin-bottom: 8px;
-  font-size: 16px;
-  line-height: 1.4;
-}
-
-/* Sticky Note Styles */
 .how-to-play {
-  background-color: #fff9c4; /* Yellow sticky note */
+  background-color: #fff9c4;
   transform: rotate(-2deg);
 }
-
 .about-section {
-  background-color: #e3f2fd; /* Blue sticky note */
+  background-color: #e3f2fd;
   transform: rotate(2deg);
 }
-
 .info-box:hover {
   transform: scale(1.05) rotate(0deg);
   z-index: 10;
   box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.2);
 }
-/* =========================================
-   MOBILE RESPONSIVENESS (Add to bottom of App.css)
-   ========================================= */
 
+/* =========================================
+   MOBILE RESPONSIVENESS
+   ========================================= */
 @media (max-width: 900px) {
-  /* --- 1. LOGIN SCREEN --- */
   .game-title-big {
-    font-size: 45px; /* Smaller Title */
+    font-size: 45px;
     letter-spacing: 2px;
     margin-top: 20px;
   }
-
   .login-wrapper {
     margin-top: 20px;
     width: 100%;
   }
-
   .login-box {
-    width: 85%; /* Fit screen width */
+    width: 85%;
     max-width: 350px;
     padding: 20px;
   }
-
-  /* Stack Avatar Builder Vertically */
   .avatar-builder {
     flex-direction: column;
     gap: 10px;
   }
-
-  /* Make controls wider for easier tapping */
   .controls {
     width: 100%;
   }
@@ -541,62 +488,46 @@ canvas {
     padding: 5px 15px;
     width: 40px;
   }
-
-  /* --- 2. FOOTER (Info Cards) --- */
   .footer-container {
     flex-direction: column;
     align-items: center;
     gap: 20px;
     padding: 0 20px;
   }
-
   .info-box {
     width: 100%;
-    transform: none !important; /* Remove rotation to save space */
+    transform: none !important;
     margin: 0;
   }
 
-  /* --- 3. GAME LAYOUT (The Big Change) --- */
+  /* CRITICAL MOBILE SCROLL FIX */
   .game-container {
-    flex-direction: column; /* Stack elements vertically */
+    flex-direction: column;
     width: 100%;
-    height: auto; /* Allow scrolling */
-    min-height: auto;
+    /* Allow browser to handle scroll naturally */
+    height: auto;
+    overflow: visible;
     margin-top: 0;
     border: none;
     border-radius: 0;
   }
 
-  /* ORDER 1: THE BOARD (Top) */
   .board-area {
     order: 1;
     width: 100%;
-    flex: none; /* Don't stretch, just take needed space */
+    flex: none;
   }
-
-  .top-bar {
-    padding: 0 10px;
-    font-size: 16px;
-  }
-
-  /* Make Canvas Responsive */
   .canvas-wrapper {
     padding: 10px;
     background: #ccc;
   }
-
-  /* client/src/App.css */
-
   canvas {
-    background: white;
-    cursor: crosshair;
-    border: 3px solid #000;
-    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
-
-    /* --- ADD THIS LINE FOR MOBILE --- */
-    touch-action: none;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 60vh;
+    box-shadow: none;
   }
-  /* ORDER 2: TOOLS & CHAT (Middle) */
+
   .right-panel {
     order: 2;
     width: 100%;
@@ -607,45 +538,31 @@ canvas {
     flex-direction: column;
   }
 
-  /* Make chat fixed height so you can scroll messages */
+  /* Give chat enough height */
   .chat {
-    height: 250px;
+    height: 300px;
     border-top: 2px solid #ccc;
   }
 
-  /* Make tools easier to tap */
-  .color-swatch {
-    width: 24px;
-    height: 24px;
-  }
-
-  .tools-row button {
-    padding: 10px; /* Bigger touch target */
-  }
-
-  /* ORDER 3: PLAYER LIST (Bottom) */
   .sidebar {
     order: 3;
     width: 100%;
     height: auto;
-    max-height: 200px; /* Scroll if too many players */
+    max-height: 200px;
     display: flex;
-    flex-wrap: wrap; /* Grid layout for players */
+    flex-wrap: wrap;
     gap: 5px;
     padding: 10px;
     background: #222;
   }
-
   .player {
-    width: 48%; /* 2 Players per row */
+    width: 48%;
     font-size: 13px;
     padding: 5px;
     background: #fff;
     border-radius: 4px;
     color: #000;
   }
-
-  /* Fix lobby avatar size on mobile */
   .lobby-avatars {
     gap: 10px;
   }

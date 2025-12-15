@@ -335,22 +335,24 @@ function App() {
     setWordOptions([]);
     socket.emit("word_selected", { room, word });
   };
+
+  // --- UPDATED SEND MESSAGE ---
   const sendMessage = () => {
+    if (!msg.trim()) return; // Don't send empty messages
     socket.emit("send_message", { room, message: msg, author: username });
     setMsg("");
   };
+
   const leaveGame = () => {
     window.location.reload();
   };
 
-  // --- UPDATED COORDINATE LOGIC FOR MOBILE ---
+  // --- UPDATED COORDINATE LOGIC ---
   const getCoordinates = (event) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-
-    // Check if it's a touch event or mouse event
     let clientX, clientY;
     if (event.nativeEvent.type.startsWith("touch")) {
       const touch =
@@ -361,18 +363,16 @@ function App() {
       clientX = event.nativeEvent.clientX;
       clientY = event.nativeEvent.clientY;
     }
-
     return {
       x: (clientX - rect.left) * scaleX,
       y: (clientY - rect.top) * scaleY,
     };
   };
 
-  // --- DRAWING HANDLERS (Works for Mouse & Touch) ---
+  // --- DRAWING HANDLERS ---
   const startDrawing = (event) => {
     if (!isMyTurn) return;
     const { x, y } = getCoordinates(event);
-
     if (tool === "bucket") {
       const MathX = Math.floor(x);
       const MathY = Math.floor(y);
@@ -380,7 +380,6 @@ function App() {
       socket.emit("fill_canvas", { room, x: MathX, y: MathY, color });
       return;
     }
-
     ctxRef.current.strokeStyle = color;
     ctxRef.current.lineWidth = lineWidth;
     ctxRef.current.beginPath();
@@ -395,11 +394,9 @@ function App() {
       width: lineWidth,
     });
   };
-
   const draw = (event) => {
     if (!isDrawing || !isMyTurn || tool === "bucket") return;
     const { x, y } = getCoordinates(event);
-
     ctxRef.current.lineTo(x, y);
     ctxRef.current.stroke();
     socket.emit("draw_line", {
@@ -411,7 +408,6 @@ function App() {
       width: lineWidth,
     });
   };
-
   const stopDrawing = () => {
     if (!isDrawing) return;
     ctxRef.current.closePath();
@@ -425,7 +421,6 @@ function App() {
       width: lineWidth,
     });
   };
-
   const clearBoard = () => {
     const ctx = ctxRef.current;
     ctx.fillStyle = "white";
@@ -679,12 +674,18 @@ function App() {
                   </div>
                 ))}
               </div>
-              <input
-                placeholder="Type here..."
-                value={msg}
-                onChange={(e) => setMsg(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              />
+              {/* --- NEW CHAT INPUT WITH SEND BUTTON --- */}
+              <div className="chat-input-area">
+                <input
+                  placeholder="Type here..."
+                  value={msg}
+                  onChange={(e) => setMsg(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                />
+                <button onClick={sendMessage} className="send-btn">
+                  ➤
+                </button>
+              </div>
             </div>
           </div>
         </div>
