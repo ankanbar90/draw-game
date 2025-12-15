@@ -33,8 +33,10 @@ const BODY_COLORS = [
   "#FFFFFF",
 ];
 
-const socket = io.connect("http://localhost:3001");
-
+// Use the environment variable if it exists, otherwise use localhost
+const socket = io.connect(
+  import.meta.env.VITE_SERVER_URL || "http://localhost:3001"
+);
 const COLORS = [
   "#000000",
   "#FFFFFF",
