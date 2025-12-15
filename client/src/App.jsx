@@ -33,10 +33,11 @@ const BODY_COLORS = [
   "#FFFFFF",
 ];
 
-// Use the environment variable if it exists, otherwise use localhost
+// Connect to Server
 const socket = io.connect(
   import.meta.env.VITE_SERVER_URL || "http://localhost:3001"
 );
+
 const COLORS = [
   "#000000",
   "#FFFFFF",
@@ -61,7 +62,6 @@ const COLORS = [
 ];
 
 // --- 3. COMPONENTS ---
-
 const Avatar = ({ config, size = "60px" }) => {
   return (
     <div
@@ -92,11 +92,9 @@ const Avatar = ({ config, size = "60px" }) => {
   );
 };
 
-// NEW: FOOTER COMPONENT
 const Footer = () => {
   return (
     <div className="footer-container">
-      {/* HOW TO PLAY */}
       <div className="info-box how-to-play creative-box">
         <h3>❓ How to Play</h3>
         <ul>
@@ -112,8 +110,6 @@ const Footer = () => {
           </li>
         </ul>
       </div>
-
-      {/* ABOUT */}
       <div className="info-box about-section creative-box">
         <h3>🎨 About</h3>
         <p>
@@ -121,7 +117,7 @@ const Footer = () => {
           Customize your avatar, join a room, and have fun doodling with
           friends!
         </p>
-        <small>Ankan Bar</small>
+        <small>Created by You</small>
       </div>
     </div>
   );
@@ -347,20 +343,36 @@ function App() {
     window.location.reload();
   };
 
-  const getCoordinates = (nativeEvent) => {
+  // --- UPDATED COORDINATE LOGIC FOR MOBILE ---
+  const getCoordinates = (event) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
+
+    // Check if it's a touch event or mouse event
+    let clientX, clientY;
+    if (event.nativeEvent.type.startsWith("touch")) {
+      const touch =
+        event.nativeEvent.touches[0] || event.nativeEvent.changedTouches[0];
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      clientX = event.nativeEvent.clientX;
+      clientY = event.nativeEvent.clientY;
+    }
+
     return {
-      x: (nativeEvent.clientX - rect.left) * scaleX,
-      y: (nativeEvent.clientY - rect.top) * scaleY,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
-  const handleMouseDown = ({ nativeEvent }) => {
+  // --- DRAWING HANDLERS (Works for Mouse & Touch) ---
+  const startDrawing = (event) => {
     if (!isMyTurn) return;
-    const { x, y } = getCoordinates(nativeEvent);
+    const { x, y } = getCoordinates(event);
+
     if (tool === "bucket") {
       const MathX = Math.floor(x);
       const MathY = Math.floor(y);
@@ -368,6 +380,7 @@ function App() {
       socket.emit("fill_canvas", { room, x: MathX, y: MathY, color });
       return;
     }
+
     ctxRef.current.strokeStyle = color;
     ctxRef.current.lineWidth = lineWidth;
     ctxRef.current.beginPath();
@@ -382,9 +395,11 @@ function App() {
       width: lineWidth,
     });
   };
-  const handleMouseMove = ({ nativeEvent }) => {
+
+  const draw = (event) => {
     if (!isDrawing || !isMyTurn || tool === "bucket") return;
-    const { x, y } = getCoordinates(nativeEvent);
+    const { x, y } = getCoordinates(event);
+
     ctxRef.current.lineTo(x, y);
     ctxRef.current.stroke();
     socket.emit("draw_line", {
@@ -396,7 +411,8 @@ function App() {
       width: lineWidth,
     });
   };
-  const handleMouseUp = () => {
+
+  const stopDrawing = () => {
     if (!isDrawing) return;
     ctxRef.current.closePath();
     setIsDrawing(false);
@@ -409,6 +425,7 @@ function App() {
       width: lineWidth,
     });
   };
+
   const clearBoard = () => {
     const ctx = ctxRef.current;
     ctx.fillStyle = "white";
@@ -431,7 +448,6 @@ function App() {
             <span style={{ color: "purple" }}>M</span>
             <span style={{ color: "pink" }}>E</span>
           </h1>
-
           <div className="login-box creative-box">
             <div className="avatar-builder">
               <Avatar config={myAvatar} size="100px" />
@@ -477,13 +493,10 @@ function App() {
               PLAY!
             </button>
           </div>
-
-          {/* --- NEW FOOTER --- */}
           <Footer />
         </div>
       )}
 
-      {/* ... LOBBY, GAME, GAME OVER (Same as before) ... */}
       {gameState === "lobby" && (
         <div className="lobby creative-box">
           <div className="lobby-header">
@@ -560,9 +573,12 @@ function App() {
               )}
               <canvas
                 ref={canvasRef}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
                 style={{ cursor: tool === "bucket" ? "cell" : "crosshair" }}
               />
             </div>

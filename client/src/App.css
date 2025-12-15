@@ -585,13 +585,17 @@ canvas {
     background: #ccc;
   }
 
-  canvas {
-    width: 100% !important; /* Force fit width */
-    height: auto !important; /* Maintain aspect ratio */
-    max-height: 60vh; /* Don't be taller than 60% of screen */
-    box-shadow: none;
-  }
+  /* client/src/App.css */
 
+  canvas {
+    background: white;
+    cursor: crosshair;
+    border: 3px solid #000;
+    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+
+    /* --- ADD THIS LINE FOR MOBILE --- */
+    touch-action: none;
+  }
   /* ORDER 2: TOOLS & CHAT (Middle) */
   .right-panel {
     order: 2;
