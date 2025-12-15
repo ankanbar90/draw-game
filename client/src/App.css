@@ -1,6 +1,11 @@
 /* client/src/App.css */
 @import url("https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap");
 
+/* --- CRITICAL FIX: Global Box Sizing --- */
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
   margin: 0;
@@ -12,9 +17,8 @@ body {
 
 /* --- MAIN APP CONTAINER --- */
 .App {
-  /* Use dynamic viewport height for mobile keyboards */
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100dvh; /* Dynamic height for mobile */
 
   display: flex;
   flex-direction: column;
@@ -49,6 +53,7 @@ body {
   align-items: center;
   gap: 20px;
   margin-top: 50px;
+  width: 100%; /* Ensure wrapper takes full width */
 }
 
 .game-title-big {
@@ -58,6 +63,8 @@ body {
   letter-spacing: 5px;
   animation: bounce 2s infinite ease-in-out;
   cursor: default;
+  text-align: center;
+  line-height: 1.1;
 }
 
 /* --- CREATIVE BOX STYLE --- */
@@ -95,6 +102,8 @@ body {
   justify-content: center;
   background-color: #fff;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.1);
+  /* Fix for images overriding radius */
+  z-index: 1;
 }
 .avatar-layer {
   position: absolute;
@@ -368,7 +377,7 @@ canvas {
   border: 3px solid #ed1c24;
 }
 
-/* Chat Area & NEW INPUT STYLES */
+/* Chat Area */
 .chat {
   flex: 1;
   display: flex;
@@ -382,7 +391,6 @@ canvas {
   padding: 10px;
   background: #fff;
 }
-
 .chat-input-area {
   display: flex;
   border-top: 3px solid #000;
@@ -407,7 +415,6 @@ canvas {
 .send-btn:active {
   background: #2980b9;
 }
-
 .sys-msg {
   color: green;
   font-weight: bold;
@@ -426,6 +433,7 @@ canvas {
   margin-bottom: 20px;
   flex-wrap: wrap;
   max-width: 900px;
+  padding-bottom: 50px;
 }
 .info-box {
   padding: 20px;
@@ -488,23 +496,31 @@ canvas {
     padding: 5px 15px;
     width: 40px;
   }
+
+  /* --- FOOTER FIX --- */
   .footer-container {
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 30px;
     padding: 0 20px;
-  }
-  .info-box {
     width: 100%;
-    transform: none !important;
-    margin: 0;
+    padding-bottom: 80px; /* Extra scrolling space */
   }
 
-  /* CRITICAL MOBILE SCROLL FIX */
+  .info-box {
+    /* Use 90% width to leave space for the hard shadow */
+    width: 90%;
+    max-width: 400px;
+    transform: none !important;
+    margin: 0 auto;
+    /* Slightly reduce shadow for mobile to prevent cut-off */
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* GAME CONTAINER FIX */
   .game-container {
     flex-direction: column;
     width: 100%;
-    /* Allow browser to handle scroll naturally */
     height: auto;
     overflow: visible;
     margin-top: 0;
@@ -527,7 +543,6 @@ canvas {
     max-height: 60vh;
     box-shadow: none;
   }
-
   .right-panel {
     order: 2;
     width: 100%;
@@ -537,13 +552,10 @@ canvas {
     display: flex;
     flex-direction: column;
   }
-
-  /* Give chat enough height */
   .chat {
     height: 300px;
     border-top: 2px solid #ccc;
   }
-
   .sidebar {
     order: 3;
     width: 100%;
