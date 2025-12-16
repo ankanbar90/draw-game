@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./App.css";
 
-// --- 1. IMPORT YOUR ASSETS ---
+// ASSETS
 import eye1 from "./assets/eyes/eyes1.png";
 import eye2 from "./assets/eyes/eyes2.png";
 import eye3 from "./assets/eyes/eyes3.png";
@@ -11,7 +11,6 @@ import eye4 from "./assets/eyes/eyes4.png";
 import eye5 from "./assets/eyes/eyes5.png";
 import eye6 from "./assets/eyes/eyes6.png";
 import eye7 from "./assets/eyes/eyes7.png";
-
 import mouth1 from "./assets/mouths/mouth1.png";
 import mouth2 from "./assets/mouths/mouth2.png";
 import mouth3 from "./assets/mouths/mouth3.png";
@@ -19,7 +18,14 @@ import mouth4 from "./assets/mouths/mouth4.png";
 import mouth5 from "./assets/mouths/mouth5.png";
 import mouth6 from "./assets/mouths/mouth6.png";
 
-// --- 2. CONFIG ARRAYS ---
+// SOUNDS (Ensure these files exist in src/assets/sounds/)
+// If you don't have them yet, these imports will error.
+// Comment them out until you add the files.
+import sndTik from "./assets/sounds/tiktik.mp3";
+import sndSuccess from "./assets/sounds/success.mp3";
+import sndFail from "./assets/sounds/fail.mp3";
+import sndRoundOver from "./assets/sounds/round_over.mp3";
+
 const EYES_OPTIONS = [eye1, eye2, eye3, eye4, eye5, eye6, eye7];
 const MOUTH_OPTIONS = [mouth1, mouth2, mouth3, mouth4, mouth5, mouth6];
 const BODY_COLORS = [
@@ -32,12 +38,6 @@ const BODY_COLORS = [
   "#F08080",
   "#FFFFFF",
 ];
-
-// Connect to Server
-const socket = io.connect(
-  import.meta.env.VITE_SERVER_URL || "http://localhost:3001"
-);
-
 const COLORS = [
   "#000000",
   "#FFFFFF",
@@ -61,77 +61,73 @@ const COLORS = [
   "#c8bfe7",
 ];
 
-// --- 3. COMPONENTS ---
-const Avatar = ({ config, size = "60px" }) => {
-  return (
-    <div
-      className="avatar-preview"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: config.color,
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: "50%",
-        border: "3px solid #000",
-      }}
-    >
-      <img
-        src={config.eyes}
-        alt="eyes"
-        className="avatar-layer"
-        style={{ top: "25%", width: "85%" }}
-      />
-      <img
-        src={config.mouth}
-        alt="mouth"
-        className="avatar-layer"
-        style={{ top: "65%", width: "60%" }}
-      />
-    </div>
-  );
-};
+const socket = io.connect(
+  import.meta.env.VITE_SERVER_URL || "http://localhost:3001"
+);
 
-const Footer = () => {
-  return (
-    <div className="footer-container">
-      <div className="info-box how-to-play creative-box">
-        <h3>❓ How to Play</h3>
-        <ul>
-          <li>
-            <strong>Draw:</strong> Choose a word and draw it on the board!
-          </li>
-          <li>
-            <strong>Guess:</strong> Type your guesses in the chat to score
-            points.
-          </li>
-          <li>
-            <strong>Win:</strong> Be the fastest to guess and the best artist!
-          </li>
-        </ul>
-      </div>
-      <div className="info-box about-section creative-box">
-        <h3>🎨 About</h3>
-        <p>
-          This is a custom built drawing game created with React & Socket.io.
-          Customize your avatar, join a room, and have fun doodling with
-          friends!
-        </p>
-        <small>Created by You</small>
-      </div>
+const Avatar = ({ config, size = "60px" }) => (
+  <div
+    className="avatar-preview"
+    style={{
+      width: size,
+      height: size,
+      backgroundColor: config.color,
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: "50%",
+      border: "3px solid #000",
+    }}
+  >
+    <img
+      src={config.eyes}
+      className="avatar-layer"
+      style={{ top: "25%", width: "85%" }}
+    />
+    <img
+      src={config.mouth}
+      className="avatar-layer"
+      style={{ top: "65%", width: "60%" }}
+    />
+  </div>
+);
+
+const Footer = () => (
+  <div className="footer-container">
+    <div className="info-box how-to-play creative-box">
+      <h3>❓ How to Play</h3>
+      <ul>
+        <li>
+          <strong>Draw:</strong> Choose a word...
+        </li>
+        <li>
+          <strong>Guess:</strong> Type guesses...
+        </li>
+        <li>
+          <strong>Win:</strong> Score points!
+        </li>
+      </ul>
     </div>
-  );
-};
+    <div className="info-box about-section creative-box">
+      <h3>🎨 About</h3>
+      <p>Custom built drawing game with React & Socket.io.</p>
+      <small>Created by You</small>
+    </div>
+  </div>
+);
 
 function App() {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
 
-  // --- STATE ---
+  // Audio Refs
+  const audioTik = useRef(new Audio(sndTik));
+  const audioSuccess = useRef(new Audio(sndSuccess));
+  const audioFail = useRef(new Audio(sndFail));
+  const audioRoundOver = useRef(new Audio(sndRoundOver));
+
   const [gameState, setGameState] = useState("login");
   const [username, setUsername] = useState("");
   const [room, setRoom] = useState("");
-
   const [myAvatar, setMyAvatar] = useState({
     color: BODY_COLORS[0],
     eyes: EYES_OPTIONS[0],
@@ -144,7 +140,14 @@ function App() {
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [wordOptions, setWordOptions] = useState([]);
   const [winner, setWinner] = useState(null);
+
+  // New States for Round Summary
   const [overlayMessage, setOverlayMessage] = useState("");
+  const [showRoundSummary, setShowRoundSummary] = useState(false);
+  const [roundResults, setRoundResults] = useState({
+    word: "",
+    guessedCount: 0,
+  });
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState("#000000");
@@ -153,8 +156,9 @@ function App() {
   const [chat, setChat] = useState([]);
   const [msg, setMsg] = useState("");
 
-  // --- FLOOD FILL ---
   const floodFill = (startX, startY, newColorHex) => {
+    // ... (Keep existing floodFill logic) ...
+    // For brevity, I'm hiding the math here, assume it's the same as before
     const canvas = canvasRef.current;
     const ctx = ctxRef.current;
     if (!canvas || !ctx) return;
@@ -224,6 +228,8 @@ function App() {
     socket.on("update_players", (data) => setPlayers(data));
     socket.on("choose_word", (data) => {
       setGameState("game");
+      setShowRoundSummary(false);
+      setOverlayMessage("");
       setDrawerName(data.drawer);
       setIsMyTurn(data.drawerId === socket.id);
       setOverlayMessage(`${data.drawer} is choosing a word...`);
@@ -245,7 +251,13 @@ function App() {
         ctx.fillRect(0, 0, 800, 600);
       }
     });
-    socket.on("timer_update", (time) => setTimer(time));
+
+    // --- TIMER & TIK TOK SOUND ---
+    socket.on("timer_update", (time) => {
+      setTimer(time);
+      if (time === 15) audioTik.current.play().catch((e) => console.log(e));
+    });
+
     socket.on("draw_line", (data) => {
       const ctx = ctxRef.current;
       if (!ctx) return;
@@ -271,17 +283,40 @@ function App() {
     socket.on("fill_canvas", ({ x, y, color }) => {
       floodFill(x, y, color);
     });
-    socket.on("receive_message", (data) => setChat((prev) => [...prev, data]));
-    socket.on("round_end", ({ word }) =>
-      setOverlayMessage(`Round Over! The word was: ${word}`)
-    );
+
+    // --- CHAT & SUCCESS SOUND ---
+    socket.on("receive_message", (data) => {
+      setChat((prev) => [...prev, data]);
+      // If someone guessed AND we have > 2 players (prevent sound spam in testing)
+      if (data.type === "success" && players.length > 2) {
+        audioSuccess.current.currentTime = 0;
+        audioSuccess.current.play().catch((e) => console.log(e));
+      }
+    });
+
+    // --- ROUND END & SUMMARY ---
+    socket.on("round_end", ({ word, guessedCount }) => {
+      setRoundResults({ word, guessedCount });
+      setShowRoundSummary(true);
+
+      // Play specific sound
+      if (guessedCount === 0) {
+        audioFail.current.play().catch((e) => console.log(e));
+      } else {
+        audioRoundOver.current.play().catch((e) => console.log(e));
+      }
+    });
+
     socket.on("game_over", (winner) => {
       setGameState("game_over");
       setWinner(winner);
     });
     socket.on("hint_update", (newHint) => setCurrentWord(newHint));
     return () => socket.off();
-  }, []);
+  }, [players.length]); // Add players dependency for correct length check
+
+  // ... (Keep existing avatar/game logic useEffects and functions: cycleOption, updateAvatar, joinGame, etc.)
+  // I will just paste the render part that changed mostly.
 
   useEffect(() => {
     if (gameState === "game" || gameState === "lobby") {
@@ -299,14 +334,12 @@ function App() {
       }, 100);
     }
   }, [gameState]);
-
   const cycleOption = (current, options, direction) => {
     const idx = options.indexOf(current);
     if (direction === "next")
       return options[idx === options.length - 1 ? 0 : idx + 1];
     else return options[idx === 0 ? options.length - 1 : idx - 1];
   };
-
   const updateAvatar = (part, direction) => {
     if (part === "color")
       setMyAvatar({
@@ -324,7 +357,6 @@ function App() {
         mouth: cycleOption(myAvatar.mouth, MOUTH_OPTIONS, direction),
       });
   };
-
   const joinGame = () => {
     socket.emit("join_room", { room, username, avatar: myAvatar });
     setGameState("lobby");
@@ -335,19 +367,14 @@ function App() {
     setWordOptions([]);
     socket.emit("word_selected", { room, word });
   };
-
-  // --- UPDATED SEND MESSAGE ---
   const sendMessage = () => {
-    if (!msg.trim()) return; // Don't send empty messages
+    if (!msg.trim()) return;
     socket.emit("send_message", { room, message: msg, author: username });
     setMsg("");
   };
-
   const leaveGame = () => {
     window.location.reload();
   };
-
-  // --- UPDATED COORDINATE LOGIC ---
   const getCoordinates = (event) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -368,8 +395,6 @@ function App() {
       y: (clientY - rect.top) * scaleY,
     };
   };
-
-  // --- DRAWING HANDLERS ---
   const startDrawing = (event) => {
     if (!isMyTurn) return;
     const { x, y } = getCoordinates(event);
@@ -491,7 +516,6 @@ function App() {
           <Footer />
         </div>
       )}
-
       {gameState === "lobby" && (
         <div className="lobby creative-box">
           <div className="lobby-header">
@@ -520,7 +544,7 @@ function App() {
             <h3>Players</h3>
             {players
               .sort((a, b) => b.score - a.score)
-              .map((p) => (
+              .map((p, i) => (
                 <div
                   className={`player ${p.hasGuessed ? "correct" : ""}`}
                   key={p.id}
@@ -532,6 +556,7 @@ function App() {
                       gap: "10px",
                     }}
                   >
+                    <span>#{i + 1}</span>
                     <Avatar config={p.avatar} size="40px" />
                     <span>{p.username}</span>
                   </div>
@@ -551,11 +576,14 @@ function App() {
               </button>
             </div>
             <div className="canvas-wrapper">
-              {overlayMessage && (
+              {/* --- 1. OVERLAY MESSAGE (e.g. Choosing Word) --- */}
+              {overlayMessage && !showRoundSummary && (
                 <div className="overlay">
                   <h2>{overlayMessage}</h2>
                 </div>
               )}
+
+              {/* --- 2. WORD SELECTION --- */}
               {wordOptions.length > 0 && (
                 <div className="overlay word-pick">
                   <h2>Choose a word!</h2>
@@ -566,6 +594,30 @@ function App() {
                   ))}
                 </div>
               )}
+
+              {/* --- 3. NEW: ROUND SUMMARY OVERLAY --- */}
+              {showRoundSummary && (
+                <div className="overlay round-summary">
+                  <h2>Round Over!</h2>
+                  <p className="revealed-word">
+                    The word was: <span>{roundResults.word}</span>
+                  </p>
+                  <div className="round-scores">
+                    {players
+                      .sort((a, b) => b.score - a.score)
+                      .map((p, i) => (
+                        <div key={p.id} className="score-row">
+                          <span className="rank">#{i + 1}</span>
+                          <span className="name">{p.username}</span>
+                          <span className="score">
+                            +{p.hasGuessed ? "100+" : "0"} ({p.score})
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               <canvas
                 ref={canvasRef}
                 onMouseDown={startDrawing}
@@ -667,14 +719,24 @@ function App() {
                 {chat.map((c, i) => (
                   <div
                     key={i}
-                    className={c.author === "SYSTEM" ? "sys-msg" : ""}
+                    className={`
+                            ${c.type === "join" ? "sys-msg-join" : ""} 
+                            ${c.type === "leave" ? "sys-msg-leave" : ""} 
+                            ${c.type === "success" ? "sys-msg-success" : ""} 
+                            ${c.author === "SYSTEM" && !c.type ? "sys-msg" : ""}
+                        `}
                   >
-                    <b>{c.author}: </b>
-                    {c.message}
+                    {c.author === "SYSTEM" ? (
+                      <b>{c.message}</b>
+                    ) : (
+                      <span>
+                        <b>{c.author}: </b>
+                        {c.message}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
-              {/* --- NEW CHAT INPUT WITH SEND BUTTON --- */}
               <div className="chat-input-area">
                 <input
                   placeholder="Type here..."
@@ -690,7 +752,6 @@ function App() {
           </div>
         </div>
       )}
-
       {gameState === "game_over" && (
         <div className="game-over creative-box">
           <h1>GAME OVER!</h1>

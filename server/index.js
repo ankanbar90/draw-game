@@ -1,4 +1,3 @@
-// server/index.js
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -14,7 +13,7 @@ const io = new Server(server, {
 
 // --- CONFIG ---
 const TOTAL_ROUNDS = 3;
-const TIME_TO_DRAW = 45;
+const TIME_TO_DRAW = 80; // <--- UPDATED TO 80 SECONDS
 const TIME_TO_PICK = 15;
 const WORD_LIST = [
   "apple",
@@ -55,7 +54,6 @@ const getWordOptions = () => {
 const revealHint = (room) => {
   const game = rooms[room];
   if (!game || !game.currentWord) return;
-
   const unrevealedIndices = game.currentWord
     .split("")
     .map((char, index) => ({ char, index }))
@@ -63,7 +61,6 @@ const revealHint = (room) => {
       (item) => item.char !== " " && !game.revealedIndices.includes(item.index)
     )
     .map((item) => item.index);
-
   if (unrevealedIndices.length > 0) {
     const randomIndex =
       unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
@@ -106,41 +103,35 @@ io.on("connection", (socket) => {
       score: 0,
       hasGuessed: false,
     });
-
-    // NOTIFY EVERYONE OF JOIN
     io.to(room).emit("update_players", rooms[room].players);
+    // Type: "join" for Green
     io.to(room).emit("receive_message", {
       author: "SYSTEM",
       message: `${username} joined the room!`,
+      type: "join",
     });
   });
 
-  // 2. DISCONNECT (HANDLE LEAVING)
+  // 2. DISCONNECT
   socket.on("disconnect", () => {
-    // We need to find which room this socket was in
     for (const roomId in rooms) {
       const room = rooms[roomId];
       const playerIndex = room.players.findIndex((p) => p.id === socket.id);
-
       if (playerIndex !== -1) {
         const player = room.players[playerIndex];
-
-        // Remove player
         room.players.splice(playerIndex, 1);
-
-        // Notify room
         io.to(roomId).emit("update_players", room.players);
+        // Type: "leave" for Red
         io.to(roomId).emit("receive_message", {
           author: "SYSTEM",
           message: `${player.username} left the room.`,
+          type: "leave",
         });
-
-        // If room is empty, delete it (optional cleanup)
         if (room.players.length === 0) {
           clearInterval(room.timerInterval);
           delete rooms[roomId];
         }
-        break; // Stop looping
+        break;
       }
     }
   });
@@ -179,33 +170,26 @@ io.on("connection", (socket) => {
     game.timerInterval = setInterval(() => {
       game.timer--;
       io.to(room).emit("timer_update", game.timer);
-      if (game.currentWord.length > 3) {
-        if (game.timer === 25) revealHint(room);
-        if (game.timer === 10) revealHint(room);
+      if (game.currentWord.length > 2) {
+        // Reveal hints at 75%, 50%, 25% time roughly
+        if (game.timer === Math.floor(TIME_TO_DRAW * 0.75)) revealHint(room);
+        if (game.timer === Math.floor(TIME_TO_DRAW * 0.5)) revealHint(room);
+        if (game.timer === Math.floor(TIME_TO_DRAW * 0.25)) revealHint(room);
       }
       if (game.timer <= 0) endTurn(room);
     }, 1000);
   });
 
-  // 5. CHAT & SCORING (FIXED LOGIC)
+  // 5. CHAT & SCORING
   socket.on("send_message", (data) => {
     const game = rooms[data.room];
     if (!game) return;
-
-    // Clean up the inputs (Remove spaces and make lowercase)
     const guess = data.message.trim().toLowerCase();
     const actualWord = game.currentWord.trim().toLowerCase();
-
-    // Check if it's a correct guess during the drawing phase
     const isCorrectGuess = game.gameState === "drawing" && guess === actualWord;
 
     if (isCorrectGuess) {
       const player = game.players.find((p) => p.id === socket.id);
-
-      // Only award points if:
-      // 1. Player exists
-      // 2. Hasn't guessed yet
-      // 3. Is NOT the person currently drawing
       if (
         player &&
         !player.hasGuessed &&
@@ -213,34 +197,23 @@ io.on("connection", (socket) => {
       ) {
         player.hasGuessed = true;
         game.guessedCount++;
-
-        // Calculate Score
         const baseScore = Math.floor(game.timer * 10);
         const bonus = game.guessedCount === 1 ? 100 : 0;
         player.score += baseScore + bonus;
 
-        // 1. Send "Guessed it" message to everyone (Hide the actual word)
+        // Type: "success" for Sound Trigger
         io.to(data.room).emit("receive_message", {
           ...data,
           author: "SYSTEM",
-          message: `${data.author} guessed the word!`, // <--- Shows this instead of "orange"
+          message: `${data.author} guessed the word!`,
+          type: "success",
         });
-
-        // 2. Update scores for everyone
         io.to(data.room).emit("update_players", game.players);
-
-        // 3. Reveal the word ONLY to the person who guessed
         io.to(player.id).emit("hint_update", game.currentWord);
-
-        // 4. Check if everyone has guessed
-        // (Total players - 1 drawer)
-        if (game.guessedCount >= game.players.length - 1) {
-          endTurn(data.room);
-        }
+        if (game.guessedCount >= game.players.length - 1) endTurn(data.room);
       }
     } else {
-      // If wrong guess, just send the message normally
-      io.to(data.room).emit("receive_message", data);
+      io.to(data.room).emit("receive_message", { ...data, type: "chat" });
     }
   });
 
@@ -284,8 +257,14 @@ io.on("connection", (socket) => {
     clearInterval(game.timerInterval);
     const drawer = game.players[game.currentDrawerIndex];
     if (game.guessedCount > 0) drawer.score += game.guessedCount * 50;
+
     io.to(room).emit("update_players", game.players);
-    io.to(room).emit("round_end", { word: game.currentWord });
+    // Send detailed stats for the Round Summary
+    io.to(room).emit("round_end", {
+      word: game.currentWord,
+      guessedCount: game.guessedCount,
+    });
+
     setTimeout(() => {
       game.currentDrawerIndex++;
       if (game.currentDrawerIndex >= game.players.length) {
@@ -293,12 +272,9 @@ io.on("connection", (socket) => {
         game.currentRound++;
       }
       startTurn(room);
-    }, 5000);
+    }, 8000); // Show summary for 8 seconds
   }
 });
 
-// Use the port Render gives us, or 3001 locally
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`SERVER RUNNING ON PORT ${PORT}`);
-});
+server.listen(PORT, () => console.log(`SERVER RUNNING ON PORT ${PORT}`));
