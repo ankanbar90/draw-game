@@ -249,18 +249,22 @@ function App() {
     socket.on("your_turn_to_pick", (words) => setWordOptions(words));
 
     socket.on("round_start", ({ currentWord }) => {
+      // --- FIX: STOP TIK TIK SOUND IMMEDIATELY ---
+      audioTik.current.pause();
+      audioTik.current.currentTime = 0;
+
       setWordOptions([]);
       setOverlayMessage("");
       setCurrentWord(currentWord);
       setShowRoundSummary(false);
       setSkippedMessage(null);
+
       const ctx = ctxRef.current;
       if (ctx) {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, 800, 600);
       }
     });
-
     // --- TIMER & SOUNDS ---
     socket.on("timer_update", (time) => {
       setTimer(time);
