@@ -107,7 +107,7 @@ const Footer = () => (
     <div className="info-box about-section creative-box">
       <h3>🎨 About</h3>
       <p>Custom built drawing game with React & Socket.io.</p>
-      <small>Created by You</small>
+      <small>Created by Ankan Bar</small>
     </div>
   </div>
 );
