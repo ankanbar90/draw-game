@@ -187,15 +187,25 @@ io.on("connection", (socket) => {
     }, 1000);
   });
 
-  // 5. CHAT & SCORING
+  // 5. CHAT & SCORING (FIXED LOGIC)
   socket.on("send_message", (data) => {
     const game = rooms[data.room];
     if (!game) return;
-    if (
-      game.gameState === "drawing" &&
-      data.message.toLowerCase() === game.currentWord.toLowerCase()
-    ) {
+
+    // Clean up the inputs (Remove spaces and make lowercase)
+    const guess = data.message.trim().toLowerCase();
+    const actualWord = game.currentWord.trim().toLowerCase();
+
+    // Check if it's a correct guess during the drawing phase
+    const isCorrectGuess = game.gameState === "drawing" && guess === actualWord;
+
+    if (isCorrectGuess) {
       const player = game.players.find((p) => p.id === socket.id);
+
+      // Only award points if:
+      // 1. Player exists
+      // 2. Hasn't guessed yet
+      // 3. Is NOT the person currently drawing
       if (
         player &&
         !player.hasGuessed &&
@@ -203,19 +213,33 @@ io.on("connection", (socket) => {
       ) {
         player.hasGuessed = true;
         game.guessedCount++;
+
+        // Calculate Score
         const baseScore = Math.floor(game.timer * 10);
         const bonus = game.guessedCount === 1 ? 100 : 0;
         player.score += baseScore + bonus;
+
+        // 1. Send "Guessed it" message to everyone (Hide the actual word)
         io.to(data.room).emit("receive_message", {
           ...data,
           author: "SYSTEM",
-          message: `${data.author} guessed the word!`,
+          message: `${data.author} guessed the word!`, // <--- Shows this instead of "orange"
         });
+
+        // 2. Update scores for everyone
         io.to(data.room).emit("update_players", game.players);
+
+        // 3. Reveal the word ONLY to the person who guessed
         io.to(player.id).emit("hint_update", game.currentWord);
-        if (game.guessedCount === game.players.length - 1) endTurn(data.room);
+
+        // 4. Check if everyone has guessed
+        // (Total players - 1 drawer)
+        if (game.guessedCount >= game.players.length - 1) {
+          endTurn(data.room);
+        }
       }
     } else {
+      // If wrong guess, just send the message normally
       io.to(data.room).emit("receive_message", data);
     }
   });
