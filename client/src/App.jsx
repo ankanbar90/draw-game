@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./App.css";
 
-// ASSETS
+// ASSETS & SOUNDS
 import eye1 from "./assets/eyes/eyes1.png";
 import eye2 from "./assets/eyes/eyes2.png";
 import eye3 from "./assets/eyes/eyes3.png";
@@ -18,9 +18,6 @@ import mouth4 from "./assets/mouths/mouth4.png";
 import mouth5 from "./assets/mouths/mouth5.png";
 import mouth6 from "./assets/mouths/mouth6.png";
 
-// SOUNDS (Ensure these files exist in src/assets/sounds/)
-// If you don't have them yet, these imports will error.
-// Comment them out until you add the files.
 import sndTik from "./assets/sounds/tiktik.mp3";
 import sndSuccess from "./assets/sounds/success.mp3";
 import sndFail from "./assets/sounds/fail.mp3";
@@ -141,13 +138,15 @@ function App() {
   const [wordOptions, setWordOptions] = useState([]);
   const [winner, setWinner] = useState(null);
 
-  // New States for Round Summary
   const [overlayMessage, setOverlayMessage] = useState("");
   const [showRoundSummary, setShowRoundSummary] = useState(false);
   const [roundResults, setRoundResults] = useState({
     word: "",
     guessedCount: 0,
   });
+
+  // NEW: Skipped Turn Message
+  const [skippedMessage, setSkippedMessage] = useState(null);
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState("#000000");
@@ -157,8 +156,6 @@ function App() {
   const [msg, setMsg] = useState("");
 
   const floodFill = (startX, startY, newColorHex) => {
-    // ... (Keep existing floodFill logic) ...
-    // For brevity, I'm hiding the math here, assume it's the same as before
     const canvas = canvasRef.current;
     const ctx = ctxRef.current;
     if (!canvas || !ctx) return;
@@ -226,10 +223,18 @@ function App() {
 
   useEffect(() => {
     socket.on("update_players", (data) => setPlayers(data));
+
+    socket.on("current_state_sync", (data) => {
+      setGameState("game");
+      setTimer(data.timer);
+      setCurrentWord(data.hint);
+    });
+
     socket.on("choose_word", (data) => {
       setGameState("game");
       setShowRoundSummary(false);
       setOverlayMessage("");
+      setSkippedMessage(null);
       setDrawerName(data.drawer);
       setIsMyTurn(data.drawerId === socket.id);
       setOverlayMessage(`${data.drawer} is choosing a word...`);
@@ -240,11 +245,15 @@ function App() {
         ctx.fillRect(0, 0, 800, 600);
       }
     });
+
     socket.on("your_turn_to_pick", (words) => setWordOptions(words));
+
     socket.on("round_start", ({ currentWord }) => {
       setWordOptions([]);
       setOverlayMessage("");
       setCurrentWord(currentWord);
+      setShowRoundSummary(false);
+      setSkippedMessage(null);
       const ctx = ctxRef.current;
       if (ctx) {
         ctx.fillStyle = "white";
@@ -252,10 +261,34 @@ function App() {
       }
     });
 
-    // --- TIMER & TIK TOK SOUND ---
+    // --- TIMER & SOUNDS ---
     socket.on("timer_update", (time) => {
       setTimer(time);
-      if (time === 15) audioTik.current.play().catch((e) => console.log(e));
+      // Play tick sound at 15s (End of drawing) AND 5s (End of picking)
+      if (time === 15 || time === 5) {
+        audioTik.current.currentTime = 0;
+        audioTik.current.play().catch((e) => console.log(e));
+      }
+    });
+
+    // --- SKIPPED TURN / DRAWER LEFT ---
+    socket.on("turn_skipped", (data) => {
+      // Stop the ticking
+      audioTik.current.pause();
+      audioTik.current.currentTime = 0;
+
+      // Play fail sound
+      audioFail.current.play().catch((e) => console.log(e));
+
+      setOverlayMessage("");
+      setWordOptions([]);
+
+      // Check if it's a "Left Game" reason or "Timeout" reason
+      if (data.reason) {
+        setSkippedMessage(`${data.username} ${data.reason}`); // "Ankan left the game!"
+      } else {
+        setSkippedMessage(`${data.username} didn't pick! -50 Points`); // Default timeout
+      }
     });
 
     socket.on("draw_line", (data) => {
@@ -280,26 +313,24 @@ function App() {
       ctx.strokeStyle = prevColor;
       ctx.lineWidth = prevWidth;
     });
+
     socket.on("fill_canvas", ({ x, y, color }) => {
       floodFill(x, y, color);
     });
 
-    // --- CHAT & SUCCESS SOUND ---
     socket.on("receive_message", (data) => {
       setChat((prev) => [...prev, data]);
-      // If someone guessed AND we have > 2 players (prevent sound spam in testing)
-      if (data.type === "success" && players.length > 2) {
+      if (data.type === "success") {
         audioSuccess.current.currentTime = 0;
         audioSuccess.current.play().catch((e) => console.log(e));
       }
     });
 
-    // --- ROUND END & SUMMARY ---
     socket.on("round_end", ({ word, guessedCount }) => {
+      audioTik.current.pause();
+      audioTik.current.currentTime = 0;
       setRoundResults({ word, guessedCount });
       setShowRoundSummary(true);
-
-      // Play specific sound
       if (guessedCount === 0) {
         audioFail.current.play().catch((e) => console.log(e));
       } else {
@@ -312,28 +343,10 @@ function App() {
       setWinner(winner);
     });
     socket.on("hint_update", (newHint) => setCurrentWord(newHint));
+
     return () => socket.off();
-  }, [players.length]); // Add players dependency for correct length check
+  }, []);
 
-  // ... (Keep existing avatar/game logic useEffects and functions: cycleOption, updateAvatar, joinGame, etc.)
-  // I will just paste the render part that changed mostly.
-
-  useEffect(() => {
-    if (gameState === "game" || gameState === "lobby") {
-      setTimeout(() => {
-        const canvas = canvasRef.current;
-        if (canvas) {
-          canvas.width = 800;
-          canvas.height = 600;
-          const ctx = canvas.getContext("2d");
-          ctx.lineCap = "round";
-          ctx.fillStyle = "white";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctxRef.current = ctx;
-        }
-      }, 100);
-    }
-  }, [gameState]);
   const cycleOption = (current, options, direction) => {
     const idx = options.indexOf(current);
     if (direction === "next")
@@ -357,6 +370,24 @@ function App() {
         mouth: cycleOption(myAvatar.mouth, MOUTH_OPTIONS, direction),
       });
   };
+
+  useEffect(() => {
+    if (gameState === "game" || gameState === "lobby") {
+      setTimeout(() => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          canvas.width = 800;
+          canvas.height = 600;
+          const ctx = canvas.getContext("2d");
+          ctx.lineCap = "round";
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctxRef.current = ctx;
+        }
+      }, 100);
+    }
+  }, [gameState]);
+
   const joinGame = () => {
     socket.emit("join_room", { room, username, avatar: myAvatar });
     setGameState("lobby");
@@ -375,6 +406,7 @@ function App() {
   const leaveGame = () => {
     window.location.reload();
   };
+
   const getCoordinates = (event) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -395,6 +427,7 @@ function App() {
       y: (clientY - rect.top) * scaleY,
     };
   };
+
   const startDrawing = (event) => {
     if (!isMyTurn) return;
     const { x, y } = getCoordinates(event);
@@ -576,14 +609,11 @@ function App() {
               </button>
             </div>
             <div className="canvas-wrapper">
-              {/* --- 1. OVERLAY MESSAGE (e.g. Choosing Word) --- */}
-              {overlayMessage && !showRoundSummary && (
+              {overlayMessage && !showRoundSummary && !skippedMessage && (
                 <div className="overlay">
                   <h2>{overlayMessage}</h2>
                 </div>
               )}
-
-              {/* --- 2. WORD SELECTION --- */}
               {wordOptions.length > 0 && (
                 <div className="overlay word-pick">
                   <h2>Choose a word!</h2>
@@ -595,7 +625,21 @@ function App() {
                 </div>
               )}
 
-              {/* --- 3. NEW: ROUND SUMMARY OVERLAY --- */}
+              {/* --- SKIPPED TURN MESSAGE --- */}
+              {skippedMessage && (
+                <div
+                  className="overlay"
+                  style={{ background: "rgba(100,0,0,0.85)" }}
+                >
+                  <h2 style={{ color: "#ff6b6b", fontSize: "30px" }}>
+                    Turn Skipped!
+                  </h2>
+                  <p style={{ fontSize: "24px", color: "white" }}>
+                    {skippedMessage}
+                  </p>
+                </div>
+              )}
+
               {showRoundSummary && (
                 <div className="overlay round-summary">
                   <h2>Round Over!</h2>
