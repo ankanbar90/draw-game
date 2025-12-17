@@ -109,6 +109,29 @@ const Footer = () => (
       <p>Custom built drawing game with React & Socket.io.</p>
       <small>Created by Ankan Bar</small>
     </div>
+    <div className="info-box about-section creative-box">
+      <h3>🎨 Support the Dev</h3>
+      <p>Enjoying the game? Help keep the servers running!</p>
+      {/* Replace '#' with your actual Buy Me a Coffee link */}
+      <a
+        href="https://www.buymeacoffee.com/ankanbar"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <button
+          className="play-btn"
+          style={{
+            fontSize: "16px",
+            padding: "10px",
+            marginTop: "10px",
+            backgroundColor: "#FFDD00",
+            color: "black",
+          }}
+        >
+          ☕ Buy me a Coffee
+        </button>
+      </a>
+    </div>
   </div>
 );
 
