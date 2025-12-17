@@ -11,7 +11,9 @@ A full-stack, real-time multiplayer drawing and guessing game built with **React
 | Login & Avatar Builder | Gameplay & Chat | Mobile Responsive |
 |:---:|:---:|:---:|
 | ![Login Screen](<img width="1271" height="886" alt="Screenshot 2025-12-16 202135" src="https://github.com/user-attachments/assets/26637353-b5fa-4c0d-a2c9-4608b1b421f2" />
-) | ![Gameplay](https://via.placeholder.com/250x150?text=Gameplay) | ![Mobile](https://via.placeholder.com/250x150?text=Mobile+View) |
+) | ![Gameplay](<img width="1906" height="883" alt="Screenshot 2025-12-16 202500" src="https://github.com/user-attachments/assets/30c1abb6-95df-4181-89b2-b0f65d3bcee6" />
+) | ![Mobile](![WhatsApp Image 2025-12-17 at 12 50 59_ff172299](https://github.com/user-attachments/assets/a592c299-c8ce-460c-a090-108c0c1ee520)
+) |
 
 *(Note: Replace these placeholder links with actual screenshots of your game for a better portfolio look!)*
 
